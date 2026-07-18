@@ -12,6 +12,14 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<any>(null);
   const valueRef = useRef(value);
+  const onChangeRef = useRef(onChange);
+  const onSaveRef = useRef(onSave);
+
+  // Keep callbacks current without rebuilding CodeMirror on every parent render.
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    onSaveRef.current = onSave;
+  }, [onChange, onSave]);
 
   // Sync value updates without re-instantiating the editor view
   useEffect(() => {
@@ -53,7 +61,7 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
               if (update.docChanged) {
                 const val = update.state.doc.toString();
                 valueRef.current = val;
-                onChange(val);
+                onChangeRef.current(val);
               }
             }),
             cmView.keymap.of([
@@ -61,8 +69,8 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
               {
                 key: "Mod-s",
                 run: () => {
-                  if (onSave) {
-                    onSave();
+                  if (onSaveRef.current) {
+                    onSaveRef.current();
                     return true;
                   }
                   return false;
@@ -89,7 +97,7 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
         view.destroy();
       }
     };
-  }, [onChange, onSave]);
+  }, []);
 
   return (
     <div
