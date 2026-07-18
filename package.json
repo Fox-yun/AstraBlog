@@ -1,26 +1,62 @@
 {
-  "name": "atronblog",
+  "name": "astrablog",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "auth:generate": "npx auth@latest generate",
+    "seed": "npx tsx scripts/seed.ts",
+    "owner": "npx tsx scripts/create-owner.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1088.0",
+    "@aws-sdk/s3-request-presigner": "^3.1088.0",
+    "@better-auth/drizzle-adapter": "^1.6.23",
+    "@codemirror/lang-markdown": "^6.5.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "better-auth": "^1.6.23",
+    "codemirror": "^6.0.2",
+    "drizzle-orm": "^0.45.2",
+    "lucide-react": "^1.24.0",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-hook-form": "^7.81.0",
+    "rehype-sanitize": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "resend": "^6.17.2",
+    "shiki": "^4.3.1",
+    "unified": "^11.0.5",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "biome": "^0.3.3",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "postcss": "^8.5.19",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.1",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

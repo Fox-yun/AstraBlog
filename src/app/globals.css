@@ -1,26 +1,305 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-bg-void: #09090b;
+  --color-bg-surface: #18181b;
+  --color-text-primary: #fafafa;
+  --color-text-muted: #a1a1aa;
+  --color-border-base: #27272a;
+  --color-accent-amber: #d4af37;
+
+  --font-serif: "Playfair Display", "Noto Serif SC", "Songti SC", serif;
+  --font-sans: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "Fira Code", "JetBrains Mono", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  /* Force zero border-radius and remove all shadows globally */
+  *, ::before, ::after {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: drop-shadow(0 0 0 transparent) !important;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background-color: var(--color-bg-void);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-accent-amber);
+    color: var(--color-bg-void);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  pre, code, kbd, samp {
+    font-family: var(--font-mono);
+  }
+
+  /* Straight forms with bottom-only borders */
+  input,
+  textarea,
+  select {
+    border: 0;
+    border-bottom: 1px solid var(--color-border-base);
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-primary);
+    padding: 0.5rem 0;
+    font-family: inherit;
+    transition: border-color 200ms ease-in-out;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: var(--color-accent-amber);
+    outline: 1px solid var(--color-accent-amber);
+    outline-offset: 4px;
+  }
+
+  button {
+    font-family: var(--font-sans);
+    border: 1px solid var(--color-border-base);
+    background: transparent;
+    color: var(--color-text-primary);
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition:
+      color 200ms ease-in-out,
+      background-color 200ms ease-in-out,
+      border-color 200ms ease-in-out;
+  }
+
+  button:hover {
+    border-color: var(--color-accent-amber);
+    color: var(--color-accent-amber);
+  }
+
+  button:focus-visible {
+    outline: 1px solid var(--color-accent-amber);
+    outline-offset: 4px;
+  }
+
+  a {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    transition: color 200ms ease-in-out;
+  }
+
+  a:hover {
+    color: var(--color-accent-amber);
+  }
+
+  a:focus-visible {
+    outline: 1px solid var(--color-accent-amber);
+    outline-offset: 4px;
+  }
+
+  blockquote {
+    border-left: 1px solid var(--color-accent-amber);
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: var(--color-text-muted);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-accent-amber);
+  background: var(--color-bg-void);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* Markdown content primitives. Kept local so the framework does not depend on
+   a typography plugin and published content has the same visual language. */
+.article-content {
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.article-content > * + * {
+  margin-top: 1.25rem;
+}
+
+.article-content h2,
+.article-content h3,
+.article-content h4 {
+  scroll-margin-top: 2rem;
+  line-height: 1.35;
+}
+
+.article-content h2 {
+  margin-top: 2.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border-base);
+  font-size: 1.35rem;
+}
+
+.article-content h3 {
+  margin-top: 2.25rem;
+  font-size: 1.1rem;
+}
+
+.article-content h4 {
+  margin-top: 1.75rem;
+  font-size: 1rem;
+}
+
+.article-content a {
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent-amber);
+  text-underline-offset: 0.22em;
+}
+
+.article-content ul,
+.article-content ol {
+  padding-left: 1.5rem;
+}
+
+.article-content ul {
+  list-style: square;
+}
+
+.article-content ol {
+  list-style: decimal;
+}
+
+.article-content li + li {
+  margin-top: 0.45rem;
+}
+
+.article-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--color-border-base);
+  opacity: 0.92;
+}
+
+.article-content hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--color-border-base);
+}
+
+.article-content :not(pre) > code {
+  border: 1px solid var(--color-border-base);
+  background: var(--color-bg-surface);
+  padding: 0.08rem 0.3rem;
+  color: var(--color-text-primary);
+  font-size: 0.88em;
+}
+
+.article-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border-base);
+  background: var(--color-bg-surface) !important;
+  padding: 1rem;
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.article-content pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.article-content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.article-content th,
+.article-content td {
+  border: 1px solid var(--color-border-base);
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+}
+
+.article-content th {
+  background: var(--color-bg-surface);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.article-content-compact {
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.article-content-compact > * + * {
+  margin-top: 0.75rem;
+}
+
+.article-content-compact h2,
+.article-content-compact h3,
+.article-content-compact h4 {
+  margin-top: 1.25rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  .article-content {
+    font-size: 0.94rem;
+  }
+}
+
+/* Hairline utilities */
+.hairline-border {
+  border: 1px solid var(--color-border-base);
+}
+
+.hairline-border-t {
+  border-top: 1px solid var(--color-border-base);
+}
+
+.hairline-border-b {
+  border-bottom: 1px solid var(--color-border-base);
+}
+
+.hairline-border-l {
+  border-left: 1px solid var(--color-border-base);
+}
+
+.hairline-border-r {
+  border-right: 1px solid var(--color-border-base);
+}
+
+/* Transition rule constraints: only color, background-color, border-color, opacity, backdrop-filter. No scale/translate/rotate. */
+.transition-strict {
+  transition-property: color, background-color, border-color, opacity, backdrop-filter;
+  transition-timing-function: ease-in-out;
+  transition-duration: 200ms;
 }
