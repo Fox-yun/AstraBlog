@@ -17,7 +17,42 @@ interface SubmitCommentInput {
   parentId?: string;
 }
 
-export async function submitComment(input: SubmitCommentInput) {
+type SubmitCommentResult =
+  | { success: true }
+  | { success: false; error: string };
+
+function getPublicCommentError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+
+  if (message.startsWith("UNAUTHORIZED:")) return "Your session expired. Please sign in again.";
+  if (message === "FORBIDDEN: Email verification required") {
+    return "Please verify your email address before commenting.";
+  }
+  if (message === "FORBIDDEN: User account is banned") {
+    return "This account cannot post comments.";
+  }
+  if (
+    message === "Comment must be between 2 and 1000 characters." ||
+    message === "Target is required (postId or isGuestbook)." ||
+    message === "Parent comment not found." ||
+    message.startsWith("Rate limit exceeded:")
+  ) {
+    return message;
+  }
+
+  return "Unable to submit the comment right now. Please try again.";
+}
+
+export async function submitComment(input: SubmitCommentInput): Promise<SubmitCommentResult> {
+  try {
+    return await submitCommentInternal(input);
+  } catch (error) {
+    console.error("Comment submission failed:", error);
+    return { success: false, error: getPublicCommentError(error) };
+  }
+}
+
+async function submitCommentInternal(input: SubmitCommentInput): Promise<SubmitCommentResult> {
   // 1. Authorize active, verified user
   const { user } = await requireActiveUser();
   const userId = user.id;
@@ -42,7 +77,7 @@ export async function submitComment(input: SubmitCommentInput) {
     status = "pending"; // Moderate comments with more than 2 links
   }
 
-  const res = await withTransaction(async (tx) => {
+  await withTransaction(async (tx) => {
     // 4. Enforce Rate Limiting (queries inside transaction for isolation)
     const now = new Date();
     const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
@@ -160,7 +195,7 @@ export async function submitComment(input: SubmitCommentInput) {
     console.error("Cache revalidation failed:", err);
   }
 
-  return { success: true, comment: res };
+  return { success: true };
 }
 
 export async function deleteComment(commentId: string) {

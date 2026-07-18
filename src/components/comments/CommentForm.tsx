@@ -40,9 +40,11 @@ export default function CommentForm({ postId, isGuestbook, parentId, onSuccess }
         if (res.success) {
           setContent("");
           if (onSuccess) onSuccess();
+        } else {
+          setError(res.error);
         }
-      } catch (err: any) {
-        setError(err.message || "An unexpected error occurred.");
+      } catch {
+        setError("Unable to submit the comment right now. Please refresh and try again.");
       }
     });
   };

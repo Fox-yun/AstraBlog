@@ -1,8 +1,6 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { dbQuery } from "@/db";
-import { profiles } from "@/db/schema/profiles";
-import { eq } from "drizzle-orm";
+import { ensureUserProfile } from "@/lib/user-profile";
 
 export async function getSession() {
   const reqHeaders = await headers();
@@ -40,19 +38,19 @@ export async function requireActiveUser() {
   const sessionResult = await requireVerifiedUser();
   const userId = sessionResult.user.id;
 
-  // Retrieve profile
-  const profile = await dbQuery.query.profiles.findFirst({
-    where: eq(profiles.userId, userId),
-  });
-
-  if (!profile) {
-    throw new Error("NOT_FOUND: Profile not found");
-  }
-
   // Check if the user is banned in Better Auth user record
   if (sessionResult.user.banned) {
     throw new Error("FORBIDDEN: User account is banned");
   }
+
+  // Better Auth owns the user record; ensure the matching public profile exists.
+  const profile = await ensureUserProfile({
+    id: userId,
+    name: sessionResult.user.name,
+    email: sessionResult.user.email,
+    username: sessionResult.user.username,
+    displayUsername: sessionResult.user.displayUsername,
+  });
 
   return { ...sessionResult, profile };
 }

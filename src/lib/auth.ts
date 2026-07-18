@@ -4,6 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { db } from "@/db";
 import { sendVerificationEmail, sendResetPasswordEmail } from "@/lib/email";
+import { ensureUserProfile } from "@/lib/user-profile";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -30,6 +31,28 @@ export const auth = betterAuth({
     storage: "database",
     window: 60,
     max: 100,
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          try {
+            await ensureUserProfile({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              username: typeof user.username === "string" ? user.username : null,
+              displayUsername:
+                typeof user.displayUsername === "string" ? user.displayUsername : null,
+            });
+          } catch (error) {
+            // Registration must not become unrecoverable after Better Auth has
+            // already committed the user. requireActiveUser retries lazily.
+            console.error("Profile initialization failed after registration:", error);
+          }
+        },
+      },
+    },
   },
   plugins: [
     username(),

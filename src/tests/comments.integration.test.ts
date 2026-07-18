@@ -71,13 +71,13 @@ describe("AstraBlog Comments Integration", () => {
       }),
     });
 
-    await expect(
-      submitComment({
-        postId: "post-1",
-        contentMarkdown: "This is a comment",
-        parentId: "non-existent-comment-id",
-      })
-    ).rejects.toThrow("Parent comment not found.");
+    const res = await submitComment({
+      postId: "post-1",
+      contentMarkdown: "This is a comment",
+      parentId: "non-existent-comment-id",
+    });
+
+    expect(res).toEqual({ success: false, error: "Parent comment not found." });
   });
 
   it("should enforce depth constraints when replying to root comment", async () => {
