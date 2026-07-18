@@ -260,15 +260,15 @@ export default function NoteEditor({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       {/* Editor Status Header */}
-      <div className="flex justify-between items-center border-b border-border-base pb-4">
-        <div>
-          <h2 className="text-lg font-serif font-light uppercase">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center border-b border-border-base pb-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-serif font-light uppercase break-words">
             EDIT {post.type}: {title || "Untitled"}
           </h2>
-          <div className="text-[10px] font-mono tracking-widest text-text-muted mt-1 uppercase flex items-center space-x-3">
-            <span>ID: {post.id}</span>
+          <div className="text-[10px] font-mono tracking-widest text-text-muted mt-1 uppercase flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="break-all">ID: {post.id}</span>
             <span>•</span>
             <span className="flex items-center space-x-1">
               <span
@@ -286,7 +286,7 @@ export default function NoteEditor({
             </span>
           </div>
         </div>
-        <div className="flex space-x-4 items-center">
+        <div className="flex flex-wrap gap-4 items-center shrink-0">
           <button
             onClick={() => triggerSave(true)}
             className="text-xs font-mono tracking-wider uppercase transition-strict text-text-primary hover:text-accent-amber hairline-border px-3 py-1 bg-bg-void"
@@ -304,8 +304,8 @@ export default function NoteEditor({
 
       {saveStatus === "CONFLICT" && (
         <div className="hairline-border p-4 bg-bg-surface text-xs font-mono text-text-primary uppercase border-l-2 border-l-accent-amber space-y-3">
-          <p className="font-bold text-accent-amber">EDIT_CONFLICT: THE REMOTELY STORED DOCUMENT HAS BEEN MODIFIED BY ANOTHER EDITOR.</p>
-          <div className="flex space-x-4">
+          <p className="font-bold text-accent-amber break-words">EDIT_CONFLICT: THE REMOTELY STORED DOCUMENT HAS BEEN MODIFIED BY ANOTHER EDITOR.</p>
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => {
                 if (confirm("Discard all your unsaved edits and reload the latest remote content?")) {
@@ -343,12 +343,12 @@ export default function NoteEditor({
       )}
 
       {/* Editor Work Surface grid layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+      <div className="min-w-0 grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-8">
 
         {/* Left Side: Editor Pane */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex flex-col">
+            <div className="min-w-0 flex flex-col">
               <label className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-1">
                 Post Title
               </label>
@@ -357,10 +357,10 @@ export default function NoteEditor({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter title..."
-                className="text-sm font-sans"
+                className="w-full min-w-0 box-border text-sm font-sans"
               />
             </div>
-            <div className="flex flex-col">
+            <div className="min-w-0 flex flex-col">
               <label className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-1">
                 Post Slug
               </label>
@@ -369,12 +369,12 @@ export default function NoteEditor({
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 placeholder="slug-path..."
-                className="text-sm font-mono"
+                className="w-full min-w-0 box-border text-sm font-mono"
               />
             </div>
           </div>
 
-          <div className="flex flex-col">
+          <div className="min-w-0 flex flex-col">
             <label className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-1">
               Short Description / Summary
             </label>
@@ -383,11 +383,11 @@ export default function NoteEditor({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Write a brief excerpt..."
-              className="text-sm font-sans resize-none"
+              className="w-full min-w-0 box-border text-sm font-sans resize-none"
             />
           </div>
 
-          <div className="flex flex-col">
+          <div className="min-w-0 flex flex-col">
             <label className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-2">
               Markdown Body
             </label>
@@ -400,7 +400,7 @@ export default function NoteEditor({
         </div>
 
         {/* Right Side: Options & Live Preview & Revisions */}
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
 
           {/* Metadata Controls */}
           <div className="hairline-border p-4 bg-bg-surface/20 space-y-4">

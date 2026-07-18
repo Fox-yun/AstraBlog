@@ -21,7 +21,7 @@ export default async function StudioLayout({
   ] as const;
 
   return (
-    <div className="w-full grid grid-cols-1 md:grid-cols-[180px_1fr] gap-8 py-6">
+    <div className="w-[calc(100vw-2.5rem)] sm:w-[calc(100vw-3rem)] max-w-[1440px] self-center min-w-0 grid grid-cols-1 md:grid-cols-[180px_minmax(0,1fr)] gap-8 py-6">
       {/* Sidebar workspace */}
       <aside className="space-y-6 md:border-r border-border-base md:pr-6">
         <div>
@@ -43,7 +43,7 @@ export default async function StudioLayout({
       </aside>
 
       {/* Main dashboard viewport */}
-      <main className="flex-1 w-full overflow-hidden">{children}</main>
+      <main className="flex-1 w-full min-w-0">{children}</main>
     </div>
   );
 }

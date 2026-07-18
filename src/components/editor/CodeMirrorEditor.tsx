@@ -57,6 +57,34 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
             cm.basicSetup,
             cmMarkdown.markdown(),
             cmView.EditorView.lineWrapping,
+            cmView.EditorView.theme(
+              {
+                "&": {
+                  color: "var(--color-text-primary)",
+                  backgroundColor: "var(--color-bg-void)",
+                },
+                ".cm-content": { caretColor: "var(--color-accent-amber)" },
+                ".cm-cursor, .cm-dropCursor": {
+                  borderLeftColor: "var(--color-accent-amber)",
+                },
+                "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
+                  backgroundColor: "var(--color-border-base)",
+                },
+                ".cm-gutters": {
+                  backgroundColor: "var(--color-bg-surface)",
+                  color: "var(--color-text-muted)",
+                  borderRight: "1px solid var(--color-border-base)",
+                },
+                ".cm-activeLineGutter": {
+                  backgroundColor: "var(--color-border-base)",
+                  color: "var(--color-accent-amber)",
+                },
+                ".cm-activeLine": {
+                  backgroundColor: "color-mix(in srgb, var(--color-bg-surface) 70%, transparent)",
+                },
+              },
+              { dark: true },
+            ),
             cmView.EditorView.updateListener.of((update) => {
               if (update.docChanged) {
                 const val = update.state.doc.toString();
@@ -102,7 +130,7 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
   return (
     <div
       ref={containerRef}
-      className="w-full h-[500px] border border-border-base font-mono text-xs overflow-auto bg-bg-void text-text-primary [&_.cm-editor]:h-full [&_.cm-editor]:outline-none"
+      className="w-full min-w-0 max-w-full h-[500px] border border-border-base font-mono text-xs overflow-hidden bg-bg-void text-text-primary [&_.cm-editor]:h-full [&_.cm-editor]:outline-none"
     />
   );
 }
