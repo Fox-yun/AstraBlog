@@ -1,31 +1,24 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/authorization";
-import { dbQuery, withTransaction } from "@/db";
+import { requireActiveUser } from "@/lib/authorization";
+import { withTransaction } from "@/db";
 import { media } from "@/db/schema/media";
-import { profiles } from "@/db/schema/profiles";
-import { s3Client, R2_BUCKET } from "@/lib/r2";
+import { isR2Configured, s3Client, R2_BUCKET } from "@/lib/r2";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate user session
-    const sessionResult = await getSession();
-    if (!sessionResult || !sessionResult.user) {
-      return NextResponse.json({ error: "UNAUTHORIZED: Session required" }, { status: 401 });
-    }
-    const user = sessionResult.user;
+    // 1. Authenticate an active, verified user.
+    const { user } = await requireActiveUser();
     const userId = user.id;
 
-    // Check profile active status (using dbQuery read client)
-    const profile = await dbQuery.query.profiles.findFirst({
-      where: eq(profiles.userId, userId),
-    });
-    if (!profile || user.banned) {
-      return NextResponse.json({ error: "FORBIDDEN: Profile does not exist or user is banned" }, { status: 403 });
+    if (!isR2Configured) {
+      return NextResponse.json(
+        { error: "Media storage is not configured. Add the R2 environment variables." },
+        { status: 503 },
+      );
     }
 
     // 2. Parse request JSON body
@@ -38,7 +31,14 @@ export async function POST(request: Request) {
       postId?: string;
     };
 
-    if (!filename || !mimeType || !sizeBytes || !type) {
+    const allowedResourceTypes = ["avatar", "note", "chat", "page", "temporary"] as const;
+    if (
+      !filename ||
+      !mimeType ||
+      !Number.isFinite(sizeBytes) ||
+      sizeBytes <= 0 ||
+      !allowedResourceTypes.includes(type)
+    ) {
       return NextResponse.json({ error: "BAD_REQUEST: Missing parameters" }, { status: 400 });
     }
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     // 4. Determine structured object path key
     // Pattern: astrablog/{environment}/{resource}/{year}/{month}/{uuid}.{ext}
     const extension = mimeType.split("/")[1] || "webp";
-    const uuid = crypto.randomUUID();
+    const mediaId = crypto.randomUUID();
     const env = process.env.NODE_ENV || "development";
     const resource = type === "avatar" ? "avatars" : `${type}s`;
 
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     const year = now.getFullYear().toString();
     const month = (now.getMonth() + 1).toString().padStart(2, "0");
 
-    const objectKey = `astrablog/${env}/${resource}/${year}/${month}/${uuid}.${extension}`;
+    const objectKey = `astrablog/${env}/${resource}/${year}/${month}/${mediaId}.${extension}`;
 
     // 5. Generate Presigned PUT URL (valid for 5 minutes)
     const command = new PutObjectCommand({
@@ -94,6 +94,7 @@ export async function POST(request: Request) {
       const [record] = await tx
         .insert(media)
         .values({
+          id: mediaId,
           ownerId: userId,
           bucket: R2_BUCKET,
           objectKey: objectKey,
@@ -113,8 +114,24 @@ export async function POST(request: Request) {
       mediaId: mediaRecord.id,
       objectKey: mediaRecord.objectKey,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Presign error:", error);
-    return NextResponse.json({ error: "INTERNAL_SERVER_ERROR: " + error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "";
+    const status = message.startsWith("UNAUTHORIZED:")
+      ? 401
+      : message.startsWith("FORBIDDEN:")
+        ? 403
+        : 500;
+    return NextResponse.json(
+      {
+        error:
+          status === 401
+            ? "Your session expired. Please sign in again."
+            : status === 403
+              ? "You do not have permission to upload this image."
+              : "Could not prepare the image upload.",
+      },
+      { status },
+    );
   }
 }

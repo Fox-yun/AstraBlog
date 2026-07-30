@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/authorization";
+import { requireActiveUser } from "@/lib/authorization";
 import { dbQuery, withTransaction } from "@/db";
 import { media } from "@/db/schema/media";
 import { auditLogs } from "@/db/schema/audit";
-import { s3Client, R2_BUCKET } from "@/lib/r2";
+import { isR2Configured, R2_PUBLIC_BASE_URL, s3Client, R2_BUCKET } from "@/lib/r2";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
 import { eq } from "drizzle-orm";
 
@@ -11,13 +11,16 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    // 1. Authenticate user
-    const sessionResult = await getSession();
-    if (!sessionResult || !sessionResult.user) {
-      return NextResponse.json({ error: "UNAUTHORIZED: Session required" }, { status: 401 });
-    }
-    const user = sessionResult.user;
+    // 1. Authenticate an active, verified user.
+    const { user } = await requireActiveUser();
     const userId = user.id;
+
+    if (!isR2Configured) {
+      return NextResponse.json(
+        { error: "Media storage is not configured. Add the R2 environment variables." },
+        { status: 503 },
+      );
+    }
 
     // 2. Parse request JSON
     const body = await request.json();
@@ -108,9 +111,26 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       media: updatedMedia,
+      publicUrl: `${R2_PUBLIC_BASE_URL}/${updatedMedia.objectKey}`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Complete upload error:", error);
-    return NextResponse.json({ error: "INTERNAL_SERVER_ERROR: " + error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "";
+    const status = message.startsWith("UNAUTHORIZED:")
+      ? 401
+      : message.startsWith("FORBIDDEN:")
+        ? 403
+        : 500;
+    return NextResponse.json(
+      {
+        error:
+          status === 401
+            ? "Your session expired. Please sign in again."
+            : status === 403
+              ? "You do not have permission to complete this upload."
+              : "Could not verify the uploaded image.",
+      },
+      { status },
+    );
   }
 }

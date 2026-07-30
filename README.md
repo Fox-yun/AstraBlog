@@ -220,7 +220,8 @@ Custom pages cannot claim framework routes. Reserved top-level slugs include
 
 1. Create categories and tags in Studio.
 2. Create a note, Chat post, or custom page.
-3. Edit Markdown with live sanitized preview.
+3. Edit Markdown with live sanitized preview. Use `[INSERT IMAGE]` to upload
+   an image and insert its Markdown reference at the current cursor position.
 4. Draft changes auto-save with optimistic revision checks.
 5. Publish immediately or select a scheduled release time.
 
@@ -240,7 +241,9 @@ must allow browser `PUT` requests from the site origin and the content types
 `image/jpeg`, `image/png`, `image/webp`, and `image/avif`.
 
 The current upload limits are 10 MB for content images and 2 MB for avatars.
-Studio verifies uploaded objects before marking media records as ready.
+Studio verifies uploaded objects before marking media records as ready. Editors
+can upload directly beside the Markdown body, while `/studio/media` remains the
+central library for browsing assets and copying references.
 
 ## Rebrand without changing the visual system
 

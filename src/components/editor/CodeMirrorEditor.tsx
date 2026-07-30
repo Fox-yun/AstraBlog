@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
 interface CodeMirrorEditorProps {
   value: string;
@@ -8,7 +8,28 @@ interface CodeMirrorEditorProps {
   onSave?: () => void;
 }
 
-export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirrorEditorProps) {
+export interface CodeMirrorEditorHandle {
+  insertMarkdownBlock: (markdown: string) => void;
+}
+
+function markdownBlockInsertion(before: string, markdown: string, after: string) {
+  const prefix =
+    before.length === 0 || before.endsWith("\n\n")
+      ? ""
+      : before.endsWith("\n")
+        ? "\n"
+        : "\n\n";
+  const suffix =
+    after.startsWith("\n\n") ? "" : after.startsWith("\n") || after.length === 0 ? "\n" : "\n\n";
+
+  return {
+    text: `${prefix}${markdown}${suffix}`,
+    cursorOffset: prefix.length + markdown.length,
+  };
+}
+
+const CodeMirrorEditor = forwardRef<CodeMirrorEditorHandle, CodeMirrorEditorProps>(
+  function CodeMirrorEditor({ value, onChange, onSave }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<any>(null);
   const valueRef = useRef(value);
@@ -33,6 +54,43 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
       }
     }
   }, [value]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      insertMarkdownBlock(markdown) {
+        const editorView = viewRef.current;
+
+        if (!editorView) {
+          const current = valueRef.current;
+          const insertion = markdownBlockInsertion(current, markdown, "");
+          const nextValue = `${current}${insertion.text}`;
+          valueRef.current = nextValue;
+          onChangeRef.current(nextValue);
+          return;
+        }
+
+        const selection = editorView.state.selection.main;
+        const before = editorView.state.doc.sliceString(0, selection.from);
+        const after = editorView.state.doc.sliceString(selection.to);
+        const insertion = markdownBlockInsertion(before, markdown, after);
+
+        editorView.dispatch({
+          changes: {
+            from: selection.from,
+            to: selection.to,
+            insert: insertion.text,
+          },
+          selection: {
+            anchor: selection.from + insertion.cursorOffset,
+          },
+          scrollIntoView: true,
+        });
+        editorView.focus();
+      },
+    }),
+    [],
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -124,6 +182,7 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
       if (view) {
         view.destroy();
       }
+      viewRef.current = null;
     };
   }, []);
 
@@ -133,4 +192,7 @@ export default function CodeMirrorEditor({ value, onChange, onSave }: CodeMirror
       className="w-full min-w-0 max-w-full h-[500px] border border-border-base font-mono text-xs overflow-hidden bg-bg-void text-text-primary [&_.cm-editor]:h-full [&_.cm-editor]:outline-none"
     />
   );
-}
+  },
+);
+
+export default CodeMirrorEditor;

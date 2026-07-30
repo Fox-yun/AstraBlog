@@ -216,7 +216,8 @@ npm run owner -- owner@example.com owner_username
 
 1. 在 Studio 中创建分类和标签。
 2. 创建 Note、Chat 动态或自定义页面。
-3. 使用 Markdown 编辑，并查看经过安全清洗的实时预览。
+3. 使用 Markdown 编辑，并查看经过安全清洗的实时预览；点击 `[INSERT IMAGE]`
+   可上传图片，并在当前光标位置插入 Markdown 引用。
 4. 草稿通过乐观版本检查自动保存。
 5. 立即发布，或选择计划发布时间。
 
@@ -236,7 +237,8 @@ Authorization: Bearer <CRON_SECRET>
 `image/webp` 和 `image/avif` 内容类型。
 
 当前内容图片上限为 10 MB，头像上限为 2 MB。Studio 会在媒体记录进入
-Ready 状态前检查存储对象是否真实存在。
+Ready 状态前检查存储对象是否真实存在。编辑器可在 Markdown Body 旁直接
+上传并插入图片，`/studio/media` 仍作为统一的媒体浏览与引用复制入口。
 
 ## 在不改变视觉体系的前提下复用
 

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useTransition } from "react";
 import { updatePost, renderMarkdown, getPostRevision } from "@/actions/posts";
-import CodeMirrorEditor from "../editor/CodeMirrorEditor";
+import CodeMirrorEditor, { type CodeMirrorEditorHandle } from "../editor/CodeMirrorEditor";
+import MarkdownImageUpload from "../editor/MarkdownImageUpload";
 import { useRouter } from "next/navigation";
 
 interface VersionItem {
@@ -76,6 +77,7 @@ export default function NoteEditor({
   // Refs for tracking changes
   const hasChangesRef = useRef(false);
   const saveSequenceRef = useRef(0);
+  const markdownEditorRef = useRef<CodeMirrorEditorHandle>(null);
   const formStateRef = useRef({
     title,
     slug,
@@ -391,7 +393,12 @@ export default function NoteEditor({
             <label className="text-[10px] font-mono text-text-muted tracking-widest uppercase mb-2">
               Markdown Body
             </label>
+            <MarkdownImageUpload
+              resourceType={post.type}
+              onInsert={(markdown) => markdownEditorRef.current?.insertMarkdownBlock(markdown)}
+            />
             <CodeMirrorEditor
+              ref={markdownEditorRef}
               value={contentMarkdown}
               onChange={setContentMarkdown}
               onSave={triggerSave}

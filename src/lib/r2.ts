@@ -3,6 +3,7 @@ import { S3Client } from "@aws-sdk/client-s3";
 const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+const publicBaseUrl = process.env.R2_PUBLIC_BASE_URL;
 
 if (
   process.env.NODE_ENV === "development" &&
@@ -21,4 +22,11 @@ export const s3Client = new S3Client({
 });
 
 export const R2_BUCKET = process.env.R2_BUCKET || "astrablog-media";
-export const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL || "";
+export const R2_PUBLIC_BASE_URL = publicBaseUrl?.replace(/\/$/, "") || "";
+export const isR2Configured = Boolean(
+  accountId &&
+    accessKeyId &&
+    secretAccessKey &&
+    process.env.R2_BUCKET &&
+    R2_PUBLIC_BASE_URL,
+);

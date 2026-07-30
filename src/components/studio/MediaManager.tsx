@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { uploadImage } from "@/lib/upload-image";
 
 interface MediaItem {
   id: string;
@@ -21,22 +22,6 @@ function fileSize(value: number) {
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-async function imageDimensions(file: File) {
-  return new Promise<{ width?: number; height?: number }>((resolve) => {
-    const objectUrl = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-      URL.revokeObjectURL(objectUrl);
-    };
-    image.onerror = () => {
-      resolve({});
-      URL.revokeObjectURL(objectUrl);
-    };
-    image.src = objectUrl;
-  });
-}
-
 export default function MediaManager({ items }: { items: MediaItem[] }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -53,40 +38,12 @@ export default function MediaManager({ items }: { items: MediaItem[] }) {
     setMessage("Requesting upload slot...");
 
     try {
-      const presignResponse = await fetch("/api/media/presign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filename: file.name,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          type: "note",
-        }),
+      await uploadImage({
+        file,
+        altText,
+        resourceType: "note",
+        onProgress: setMessage,
       });
-      const presign = await presignResponse.json();
-      if (!presignResponse.ok) throw new Error(presign.error || "Could not prepare upload.");
-
-      setMessage("Uploading image...");
-      const uploadResponse = await fetch(presign.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!uploadResponse.ok) throw new Error("Storage rejected the upload.");
-
-      const dimensions = await imageDimensions(file);
-      setMessage("Verifying upload...");
-      const completeResponse = await fetch("/api/media/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mediaId: presign.mediaId,
-          altText: altText.trim() || file.name,
-          ...dimensions,
-        }),
-      });
-      const complete = await completeResponse.json();
-      if (!completeResponse.ok) throw new Error(complete.error || "Could not verify upload.");
 
       setStatus("done");
       setMessage("Upload complete.");
