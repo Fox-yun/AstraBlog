@@ -6,4 +6,5 @@ export * from "./comments";
 export * from "./media";
 export * from "./notifications";
 export * from "./audit";
+export * from "./bar";
 export * from "../relations";

@@ -8,6 +8,13 @@
       "when": 1784229741334,
       "tag": "0000_sharp_magik",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789080770217,
+      "tag": "0001_bar_catalog",
+      "breakpoints": true
     }
   ]
 }

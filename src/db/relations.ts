@@ -7,6 +7,22 @@ import { comments, commentReports } from "./schema/comments";
 import { media } from "./schema/media";
 import { notifications } from "./schema/notifications";
 import { auditLogs } from "./schema/audit";
+import { barIngredientCategories, barIngredients, barRecipes, barRecipeIngredients } from "./schema/bar";
+
+export const barIngredientCategoriesRelations = relations(barIngredientCategories, ({ many }) => ({
+  ingredients: many(barIngredients),
+}));
+export const barIngredientsRelations = relations(barIngredients, ({ many, one }) => ({
+  recipeIngredients: many(barRecipeIngredients),
+  category: one(barIngredientCategories, { fields: [barIngredients.categoryId], references: [barIngredientCategories.id] }),
+}));
+export const barRecipesRelations = relations(barRecipes, ({ many }) => ({
+  ingredients: many(barRecipeIngredients),
+}));
+export const barRecipeIngredientsRelations = relations(barRecipeIngredients, ({ one }) => ({
+  recipe: one(barRecipes, { fields: [barRecipeIngredients.recipeId], references: [barRecipes.id] }),
+  ingredient: one(barIngredients, { fields: [barRecipeIngredients.ingredientId], references: [barIngredients.id] }),
+}));
 
 export const userRelations = relations(user, ({ one, many }) => ({
   profile: one(profiles, { fields: [user.id], references: [profiles.userId] }),

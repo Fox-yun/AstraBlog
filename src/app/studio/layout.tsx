@@ -7,7 +7,7 @@ export default async function StudioLayout({
   children: React.ReactNode;
 }) {
   // Ensure that the user is an admin or owner before mounting the studio
-  await requireRole("admin", "owner");
+  const { user } = await requireRole("admin", "owner");
 
   const links = [
     ["Dashboard", "/studio/dashboard"],
@@ -38,6 +38,7 @@ export default async function StudioLayout({
                 {label}
               </Link>
             ))}
+            {user.role === "owner" && <Link href="/studio/bar" className="text-text-muted hover:text-text-primary underline underline-offset-4">Bar</Link>}
           </nav>
         </div>
       </aside>

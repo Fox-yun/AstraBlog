@@ -13,12 +13,9 @@ export default function Home() {
         {siteConfig.ownerName.toUpperCase()}
       </h1>
 
-      <div className="space-y-4 mb-12 text-base font-sans tracking-wide">
-        <p className="text-text-primary leading-relaxed">{siteConfig.description}</p>
-        <p className="text-text-muted leading-relaxed">
-          {siteConfig.secondaryDescription}
-        </p>
-      </div>
+      <p className="mb-12 text-base font-sans tracking-wide text-text-primary leading-relaxed">
+        I am a part of all that I have met.
+      </p>
 
       <nav
         aria-label="Content sections"
@@ -28,10 +25,9 @@ export default function Home() {
           <Link
             key={item.href}
             href={item.href}
-            className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 py-2 border-b border-border-base/50 hover:border-accent-amber hover:text-accent-amber transition-strict"
+            className="block py-2 border-b border-border-base/50 hover:border-accent-amber hover:text-accent-amber transition-strict"
           >
             <span>{String(index + 1).padStart(2, "0")} / {item.label}</span>
-            <span className="text-text-muted text-xs">{item.description}</span>
           </Link>
         ))}
       </nav>

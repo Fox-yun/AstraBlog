@@ -28,10 +28,13 @@ test("Verify AstraBlog Visual Style Constraints (Dark Void Parity, 0px Radius, 1
   // 4. Verify hairline border width constraint
   const borderWidths = await page.evaluate(() => {
     const el = document.querySelector(".hairline-border, border, [class*='border-']");
-    if (!el) return "1px"; // fallback
+    if (!el) return [];
     const style = window.getComputedStyle(el);
-    return style.borderWidth || style.borderTopWidth || "1px";
+    // Computed shorthand can be "0px 0px 1px" for a bottom-only border.
+    return [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth]
+      .filter((width) => Number.parseFloat(width) > 0);
   });
   // Must be hairline width
-  expect(borderWidths).toMatch(/^(1px|0\.\d+px)$/);
+  expect(borderWidths.length).toBeGreaterThan(0);
+  for (const width of borderWidths) expect(width).toMatch(/^(1px|0\.\d+px)$/);
 });

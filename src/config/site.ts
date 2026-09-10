@@ -51,14 +51,16 @@ export const siteConfig = {
   navigation: [
     { href: "/notes", label: "Notes" },
     { href: "/chat", label: "Chat" },
+    { href: "/bar", label: "Bar" },
     { href: "/guestbook", label: "Guestbook" },
     { href: "/about", label: "About" },
   ],
   homeLinks: [
-    { href: "/notes", label: "NOTES", description: "文献式文章索引" },
-    { href: "/chat", label: "CHAT", description: "碎片动态与图片记录" },
-    { href: "/guestbook", label: "GUESTBOOK", description: "注册用户留言板" },
-    { href: "/about", label: "ABOUT", description: "个人与技术履历" },
+    { href: "/notes", label: "NOTES" },
+    { href: "/chat", label: "CHAT" },
+    { href: "/bar", label: "BAR" },
+    { href: "/guestbook", label: "GUESTBOOK" },
+    { href: "/about", label: "ABOUT" },
   ],
   footerStack: ["NEON PG", "BETTER AUTH", "CLOUDFLARE R2"],
 } as const;
@@ -67,6 +69,7 @@ export const reservedPageSlugs = new Set([
   "account",
   "api",
   "auth",
+  "bar",
   "categories",
   "chat",
   "feed.xml",
