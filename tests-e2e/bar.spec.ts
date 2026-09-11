@@ -6,6 +6,8 @@ import { testId } from "../src/lib/bar/fixtures.test-support";
 
 let publicBundle: string;
 let editorBundle: string;
+let managerBundle: string;
+const backupExample = readFileSync("docs/examples/bar-import.v1.json", "utf8");
 test.beforeAll(async () => {
   const compile = async (source: string) => (await build({ stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" },
     bundle: true, write: false, platform: "browser", format: "iife", jsx: "automatic", define: { "process.env.NODE_ENV": '"development"' },
@@ -15,17 +17,27 @@ test.beforeAll(async () => {
         if (args.path === "next/navigation") return { contents: 'export const useRouter = () => ({replace() {}, refresh() {}, push() {}});', loader: "js" };
         if (args.path === "next/link") return { contents: 'export default function Link() { return null; }', loader: "js" };
         return { contents: `export async function saveBarRecipe(input) { window.__lastSaved = input; return input.name === '冲突测试' ? {success:false,error:'内容已被其他页面更新。'} : {success:true,data:{id:'${testId(20)}',revision:(input.revision || 0)+1}}; }
-          export async function saveBarIngredient(input) {return {success:true,data:{...input,id:'${testId(90)}'}};}`, loader: "js" };
+          export async function saveBarIngredient(input) {return {success:true,data:{...input,id:'${testId(90)}'}};}
+          export async function exportBarData() { return {success:true,data:${JSON.stringify(backupExample)}}; }
+          export async function importBarData(form) {
+            window.__importCalls = (window.__importCalls || 0) + 1;
+            window.__imported = await form.get('file').text();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            return window.__importFail ? {success:false,error:'导入失败，整批未保存。'} : {success:true,data:{categoriesAdded:0,ingredientsAdded:1,recipesAdded:1,recipesSkipped:0}};
+          }
+          export async function changeBarRecipeStatus() { throw new Error('unused'); }
+          export async function duplicateBarRecipe() { throw new Error('unused'); }`, loader: "js" };
       });
     } }],
   })).outputFiles[0].text;
   publicBundle = await compile(`import {createRoot} from 'react-dom/client'; import BarBrowser from './src/components/bar/bar-browser'; import {testCatalog} from './src/lib/bar/fixtures.test-support'; createRoot(document.getElementById('root')).render(<BarBrowser catalog={testCatalog()}/>);`);
   editorBundle = await compile(`import {createRoot} from 'react-dom/client'; import RecipeEditor from './src/components/bar/recipe-editor'; import {testIngredients,testCategories} from './src/lib/bar/fixtures.test-support'; createRoot(document.getElementById('root')).render(<RecipeEditor ingredients={testIngredients} categories={testCategories}/>);`);
+  managerBundle = await compile(`import {createRoot} from 'react-dom/client'; import RecipeManager from './src/components/bar/recipe-manager'; createRoot(document.getElementById('root')).render(<div className="bar-surface"><RecipeManager recipes={[]}/></div>);`);
 });
 
-async function openFixture(page: Page, editor = false) {
+async function openFixture(page: Page, editor: boolean | "manager" = false) {
   const css = readFileSync("src/components/bar/bar.css", "utf8");
-  await page.route("**/__bar-fixture", (route) => route.fulfill({ contentType: "text/html", body: `<!doctype html><html lang="zh"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root {--color-bg-void:#09090b;--color-bg-surface:#18181b;--color-text-primary:#fafafa;--color-text-muted:#a1a1aa;--color-border-base:#27272a;--color-accent-amber:#d4af37;}*{box-sizing:border-box}body{background:#09090b;color:#fafafa;font-family:system-ui;margin:0;padding:20px}button,input,textarea,select{font:inherit;background:#18181b;color:#fafafa;padding:8px;border:1px solid #27272a}ul{list-style:none;padding:0}#root{max-width:850px;margin:auto}${css}</style></head><body><div id="root"></div><script>${(editor ? editorBundle : publicBundle).replaceAll("</script", "<\\/script")}</script></body></html>` }));
+  await page.route("**/__bar-fixture", (route) => route.fulfill({ contentType: "text/html", body: `<!doctype html><html lang="zh"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root {--color-bg-void:#09090b;--color-bg-surface:#18181b;--color-text-primary:#fafafa;--color-text-muted:#a1a1aa;--color-border-base:#27272a;--color-accent-amber:#d4af37;}*{box-sizing:border-box}body{background:#09090b;color:#fafafa;font-family:system-ui;margin:0;padding:20px}button,input,textarea,select{font:inherit;background:#18181b;color:#fafafa;padding:8px;border:1px solid #27272a}ul{list-style:none;padding:0}#root{max-width:850px;margin:auto}${css}</style></head><body><div id="root"></div><script>${(editor === "manager" ? managerBundle : editor ? editorBundle : publicBundle).replaceAll("</script", "<\\/script")}</script></body></html>` }));
   await page.goto("http://localhost:3000/__bar-fixture");
 }
 
@@ -114,6 +126,45 @@ test("editor adds dictionary entries, sorts rows, preserves failed input, then s
   await page.getByRole("button", { name: "发布", exact: true }).click();
   await expect(page.getByRole("button", { name: "更新线上配方", exact: true })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("线上配方已更新");
+});
+
+test("imports a downloaded backup after preview, preserves failed uploads and reports success", async ({ page }, testInfo) => {
+  await openFixture(page, "manager");
+  page.once("dialog", (dialog) => dialog.accept());
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出完整 JSON（含私人备注）", exact: true }).click();
+  const download = await downloadPromise;
+  const path = testInfo.outputPath("exported-bar.json"); await download.saveAs(path);
+  const input = page.getByLabel("选择酒单 JSON 文件");
+  await input.setInputFiles(path);
+  await expect(page.getByRole("status")).toContainText("1 个类型标签、1 种材料、1 份酒谱、1 项配料");
+  await expect(page.getByRole("status")).toContainText("示例酒谱");
+  expect(await page.evaluate(() => (window as Window & { __importCalls?: number }).__importCalls || 0)).toBe(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("import-mobile.png"), fullPage: true });
+  await page.evaluate(() => { (window as Window & { __importFail?: boolean }).__importFail = true; });
+  await page.getByRole("button", { name: "确认导入为草稿", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("整批未保存");
+  await expect(page.getByRole("button", { name: "确认导入为草稿", exact: true })).toBeEnabled();
+  expect(await input.evaluate((el: HTMLInputElement) => el.files?.length)).toBe(1);
+  await page.evaluate(() => { (window as Window & { __importFail?: boolean }).__importFail = false; });
+  await page.getByRole("button", { name: "确认导入为草稿", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("新增 1 份草稿，跳过 0 份已有酒谱");
+  await expect(page.getByRole("button", { name: "确认导入为草稿", exact: true })).toBeDisabled();
+  expect(await input.evaluate((el: HTMLInputElement) => el.files?.length)).toBe(0);
+  expect(await page.evaluate(() => (window as Window & { __imported?: string }).__imported)).toBe(backupExample);
+});
+
+test("rejects malformed, unsupported and oversized imports before calling the server", async ({ page }) => {
+  await openFixture(page, "manager");
+  const input = page.getByLabel("选择酒单 JSON 文件");
+  for (const [content, error] of [["{", "有效的 JSON"], [JSON.stringify({ formatVersion: 2 }), "formatVersion: 1"], ["x".repeat(5 * 1024 * 1024 + 1), "5 MiB"]]) {
+    await input.setInputFiles({ name: "invalid.json", mimeType: "application/json", buffer: Buffer.from(content) });
+    await expect(page.getByRole("alert")).toContainText(error);
+    await expect(page.getByRole("button", { name: "确认导入为草稿", exact: true })).toBeDisabled();
+  }
+  expect(await page.evaluate(() => (window as Window & { __importCalls?: number }).__importCalls || 0)).toBe(0);
 });
 
 test("real public route responds and unauthenticated Studio redirects to login", async ({ page }) => {

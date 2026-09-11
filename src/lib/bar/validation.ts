@@ -24,13 +24,15 @@ export const recipeIngredientSchema = z.object({
     ctx.addIssue({ code: "custom", path: ["amountText"], message: "数值与单位、文字用量只能选择一种表达" });
   }
 });
-export const recipeInputSchema = z.object({
-  id: idSchema.optional(), revision: z.number().int().positive().max(2147483646).optional(),
+export const recipeContentSchema = z.object({
   name: text(160), nameEn: text(160), aliases: words(30, 160),
   description: text(500), flavorTags: words(20, 40), method: text(120), glass: text(120),
   iceNote: text(500), steps: z.array(text(2000)).max(60),
   publicNotes: text(10000), privateNotes: text(10000), sourceName: text(200),
   sourceUrl: text(2000).refine(isSafeSourceUrl, "来源链接只允许无账号密码的 http 或 https 地址"),
+});
+export const recipeInputSchema = recipeContentSchema.extend({
+  id: idSchema.optional(), revision: z.number().int().positive().max(2147483646).optional(),
   status: z.enum(["draft", "published"]), ingredients: z.array(recipeIngredientSchema).max(80),
 }).superRefine((recipe, ctx) => {
   const issue = (path: (string | number)[], message: string) => ctx.addIssue({ code: "custom", path, message });

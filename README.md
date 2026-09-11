@@ -130,7 +130,25 @@ To publish a recipe:
 
 Published recipes are updated directly by **“更新线上配方”**. To experiment separately, duplicate a recipe as a draft. Taking a recipe down archives it; restoring it returns it to draft. Atomic revision checks reject stale saves, and recipe/ingredient writes commit or roll back together.
 
-Private notes remain in Owner-only editing, preview and backup data. Complete JSON exports include type labels, materials, recipes, ingredient rows and private notes. Keep them private; there is no public backup URL or restore-import UI.
+Private notes remain in Owner-only editing, preview and backup data. Complete JSON exports include type labels, materials, recipes, ingredient rows and private notes. Keep them private; there is no public backup URL.
+
+### JSON batch import and export
+
+Open `/studio/bar` as the Owner. **“导出完整 JSON（含私人备注）”** downloads a complete backup. Under **“JSON 批量导入”**, select that file, review the counts and recipe names, then click **“确认导入为草稿”**. A failed import keeps the selected file for retry; success reports added and skipped records.
+
+Import and export share the existing `formatVersion: 1` format, so previously exported files work directly. The top-level fields are `formatVersion`, `exportedAt`, `categories`, `ingredients`, `recipes` and `recipeIngredients`. Use the [complete JSON example](./docs/examples/bar-import.v1.json) when preparing a batch manually; replace example UUIDs for new records and keep references consistent.
+
+| Import behavior | Rule |
+| --- | --- |
+| New recipes | Preserve recipe IDs, text, private notes, quantities and step/ingredient order; always create drafts, including previously published or archived recipes |
+| Existing recipes | Skip matching IDs entirely, preserving current edits, status and revision; names alone do not identify duplicates |
+| Type labels | Reuse matching IDs or exact names; add missing labels without editing existing ones |
+| Materials | Reuse matching IDs or fixed `code` values and remap references; conflicting ID/code pairs fail the batch; `ice` and `water` use existing system records |
+| Audit fields | Use the signed-in Owner and new timestamps; new recipes start at revision 1 with no publication time, and ingredient rows receive new IDs |
+| Validation and failure | Require supported version, unique IDs, valid fields and references contained in the same file; all database writes commit or roll back together |
+| Limits | UTF-8 JSON up to 5 MiB; at most 1,000 labels, 5,000 materials, 1,000 recipes and 80 ingredient rows per recipe per file |
+
+After import, review drafts in Studio and publish them individually. No database migration is needed for the import feature; the existing Bar migration must already be applied. See [format details](./docs/bar.md#json-批量导入与导出) for optional audit fields and how to split large files.
 
 V1 does not track remaining inventory, substitute ingredients automatically, synchronize preferences across devices or add recipe image uploads. “All ingredients available” checks material types, not glassware, tools or sufficient volume. Migrations initialize dictionaries, not sample drinks; the catalog stays empty until recipes are published.
 
@@ -153,7 +171,7 @@ See [Bar documentation](./docs/bar.md) for the four-table model, validation rule
 | `/studio/bar/ingredients`, `/studio/bar/categories` | Materials and type labels | Owner only |
 | `/feed.xml`, `/sitemap.xml`, `/robots.txt` | Discovery endpoints | Public |
 
-Bar management queries, mutations and exports independently verify the Owner session. Public data uses an explicit field whitelist: private notes, drafts and draft-only materials/types are excluded.
+Bar management queries, mutations, imports and exports independently verify the Owner session. Public data uses an explicit field whitelist: private notes, drafts and draft-only materials/types are excluded.
 
 Blog categories/tags and Bar material types are separate dictionaries. Reserved custom-page route names, including `bar`, are defined in [site.ts](./src/config/site.ts).
 
