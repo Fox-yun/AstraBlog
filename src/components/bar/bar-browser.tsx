@@ -38,7 +38,7 @@ export default function BarBrowser({ catalog }: { catalog: BarCatalog }) {
   const results = useMemo(() => filterCatalog(catalog, preferences, query, favoritesOnly), [catalog, preferences, query, favoritesOnly]);
   const dictionary = useMemo(() => new Map(catalog.ingredients.map((item) => [item.id, item])), [catalog.ingredients]);
   return <div className="bar-surface bar-stack">
-    <header className="bar-row bar-between"><h1>BAR / 我的酒谱</h1><span className="bar-muted font-mono">{catalog.recipes.length} RECIPES</span></header>
+    <header className="bar-row bar-between"><h1>BAR</h1><span className="bar-muted font-mono">{catalog.recipes.length} RECIPES</span></header>
     <label>搜索酒谱<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索酒名、英文名、材料……" /></label>
     {warning && <p role="status" className="bar-muted">{warning}</p>}
     <IngredientPicker ingredients={catalog.ingredients} categories={catalog.categories} selectedIds={preferences.selectedIngredientIds} onToggle={toggleIngredient} onClear={() => update({ ...preferences, selectedIngredientIds: [] })} disabled={!ready} />

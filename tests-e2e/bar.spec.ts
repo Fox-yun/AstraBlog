@@ -169,6 +169,6 @@ test("rejects malformed, unsupported and oversized imports before calling the se
 
 test("real public route responds and unauthenticated Studio redirects to login", async ({ page }) => {
   const response = await page.goto("/bar"); expect(response?.status()).toBe(200);
-  await expect(page.getByRole("heading", { name: "BAR / 我的酒谱" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "BAR", exact: true })).toBeVisible();
   await page.goto("/studio/bar/categories"); await expect(page).toHaveURL(/\/auth\/login/);
 });
